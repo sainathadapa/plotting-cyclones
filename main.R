@@ -80,9 +80,31 @@ library(gganimate)
 
 gg_animate(p)
 
-# TODO: splines
-# TODO: talk about the gg layers, thank hadley and others
+# TODO: better map
 # TODO: animate everything wrt 0th hour
 # TODO: read about how to measure intensity of cyclone
 # TODO: make a note that the point size is not representative of the area that got affected
 # TODO: also more plots (line/bar) are possible showing the intensity (wind of pressure) of cyclones vs time or state or place of contact
+# TODO: talk about the gg layers, thank hadley and others
+
+# TODO: splines
+# - http://stackoverflow.com/questions/11356997/interpolating-a-path-curve-within-r
+# - http://stackoverflow.com/questions/7729058/how-can-i-get-a-cubic-bezier-curve-closest-to-given-points
+# - https://www.particleincell.com/2012/bezier-splines/
+# - https://www.wikiwand.com/en/B%C3%A9zier_curve
+# - http://stackoverflow.com/questions/31554390/how-to-smooth-curves-line-graph-in-ggplot
+
+ggmap(BayOfBengalMap) + 
+  # geom_path(data = stormsData %>% filter(Serial_Num %in% Serial_Num[1]),
+  #           aes(x = Longitude,
+  #               y = Latitude,
+  #               group = Serial_Num),
+  #           linetype="dashed",
+  #           alpha = 0.5,
+  #           size = 0.8) +
+  geom_xspline(data = stormsData %>% filter(Serial_Num %in% Serial_Num[1]),
+               aes(x = Longitude,
+                   y = Latitude,
+                   group = Serial_Num,
+                   color = Wind.WMO.),
+               spline_shape=1, size=0.5)
