@@ -79,3 +79,9 @@ p <- ggmap(BayOfBengalMap) +
 library(gganimate)
 
 gg_animate(p)
+
+# TODO: splines
+# TODO: talk about the gg layers, thank hadley and others
+# TODO: animate everything wrt 0th hour
+# TODO: read about how to measure intensity of cyclone
+# TODO: make a note that the point size is not representative of the area that got affected
