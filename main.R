@@ -85,3 +85,4 @@ gg_animate(p)
 # TODO: animate everything wrt 0th hour
 # TODO: read about how to measure intensity of cyclone
 # TODO: make a note that the point size is not representative of the area that got affected
+# TODO: also more plots (line/bar) are possible showing the intensity (wind of pressure) of cyclones vs time or state or place of contact
