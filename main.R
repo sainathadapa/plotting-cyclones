@@ -25,7 +25,7 @@ library('dplyr'); library('ggmap')
 #+  echo=TRUE, messages=TRUE, results='markup', warning=TRUE, include=TRUE
 # Loading storms data for North Indian Ocean Basin
 stormsData <- read.csv(
-  url('ftp://eclipse.ncdc.noaa.gov/pub/ibtracs/v03r06/wmo/csv/basin/Basin.NI.ibtracs_wmo.v03r06.csv'),
+  url('ftp://eclipse.ncdc.noaa.gov/pub/ibtracs/v03r08/wmo/csv/basin/Basin.NI.ibtracs_wmo.v03r08.csv'),
   skip = 1, stringsAsFactors = FALSE)
 
 # remove variable information
