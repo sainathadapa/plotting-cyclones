@@ -28,15 +28,3 @@ p <- ggmap(google_map) +
 
 p
 gg_animate(p)
-
-india_map <- map_data('world',region = 'India')
-ggplot() + geom_polygon(data = east_coast,aes(x=long,y=lat)) + coord_cartesian(xlim = c(77,90), ylim = c(8.75,24.5))
-
-
-
-mainland_india <- map_data('world',region = 'India') %>%
-  filter(is.na(subregion))
-
-
-cyclones$crossed_mainland <- Map(f = function(x, y) sp::point.in.polygon(x, y, mainland_india$long, mainland_india$lat), 
-                                 x = cyclones$Longitude, y = cyclones$Latitude)
