@@ -108,6 +108,8 @@ landfall_points <- lapply(unique(bay_of_bengal_cyclones$Serial_Num), function(on
   do.call(what = rbind, args = .) %>% 
   filter(!is.na(x))
 
+saveRDS(landfall_points, file = '4-landfall-points-data.rds')
+
 google_map <- get_googlemap(center = c(lon = landfall_points$x %>% range %>% sum %>% divide_by(2),
                                        lat = landfall_points$y %>% range %>% sum %>% divide_by(2)),
                             zoom   = 5,
