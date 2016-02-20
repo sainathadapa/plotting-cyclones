@@ -27,3 +27,10 @@ ggmap(google_map, darken = 0.15) +
   scale_color_viridis(name = 'Pressure (mb)', option = 'C') +
   scale_size_continuous(name = 'Wind (kt)')
 
+gganimate::gg_animate(ggmap(google_map, darken = 0.15) + 
+  geom_path(data = one_cyclone_spline_data, aes(x = x, y = y), linetype = 'twodash', alpha = 1) + 
+  geom_point(data = one_cyclone, aes(x = Longitude, y = Latitude, color = Pres.WMO., size = Wind.WMO., frame = ISO_time)) +
+  scale_color_viridis(name = 'Pressure (mb)', option = 'C') +
+  scale_size_continuous(name = 'Wind (kt)'),
+  interval = 0.25)
+
