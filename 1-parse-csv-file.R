@@ -7,9 +7,15 @@ cyclones <- read.csv(
   skip = 1, stringsAsFactors = FALSE)
 
 cyclones <- cyclones[-1, ] 
+
+# Trimming the white space at both ends of the strings
 cyclones[] <- lapply(cyclones, str_trim)
+
+# Converting numerical columns
 numeric_columns <- c('Season', 'Latitude', 'Longitude', 'Wind.WMO.', 'Pres.WMO.')
 cyclones[numeric_columns] <- lapply(cyclones[numeric_columns], as.numeric)
-cyclones$ISO_time <- as.POSIXct(cyclones$ISO_time, tz = 'UTC') # not sure about the time zone
+
+# Note: not sure about the time zone
+cyclones$ISO_time <- as.POSIXct(cyclones$ISO_time, tz = 'UTC')
 
 saveRDS(cyclones, '1-cyclones-data-parsed.rds')

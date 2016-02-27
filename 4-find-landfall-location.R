@@ -5,20 +5,22 @@ library('sp')
 library('ggmap')
 
 cyclones <- readRDS('1-cyclones-data-parsed.rds')
-splines_data <- readRDS('2-splines-data.rds')
 
-mainland_india <- map_data('world',region = 'India') %>% filter(is.na(subregion)) %>% select(long, lat, order)
-bangladesh <- map_data('world', region = 'Bangladesh') %>% filter(is.na(subregion)) %>% select(long, lat, order)
-myanmar <- map_data('world', region = 'Myanmar') %>% filter(is.na(subregion)) %>% select(long, lat, order)
+# Loading map data -------------------------------------------------------
+bay_of_bengal_cyclones <- cyclones %>%
+  filter(Sub_basin %in% 'BB')
 
-bay_of_bengal_cyclones <- cyclones %>% filter(Sub_basin %in% 'BB')
+mainland_india <- map_data('world',region = 'India') %>%
+  filter(is.na(subregion)) %>%
+  select(long, lat, order)
+bangladesh <- map_data('world', region = 'Bangladesh') %>%
+  filter(is.na(subregion)) %>%
+  select(long, lat, order)
+myanmar <- map_data('world', region = 'Myanmar') %>%
+  filter(is.na(subregion)) %>%
+  select(long, lat, order)
 
-base_plot <- ggplot() +
-  geom_polygon(data = mainland_india, aes(x = long, y = lat), fill = gray(0.3)) + 
-  geom_polygon(data = bangladesh, aes(x = long, y = lat), fill = gray(0.5)) + 
-  geom_polygon(data = myanmar, aes(x = long, y = lat), fill = gray(0.7))
-
-
+# Creating spacial polygons of the coasts for later use ------------------
 mainland_india_sp <- mainland_india[,c('long', 'lat')] %>% 
   as.matrix %>% 
   Polygon %>% 
@@ -43,15 +45,11 @@ myanmar_sp <- myanmar[,c('long', 'lat')] %>%
   list(.) %>% 
   SpatialPolygons()
 
-
+# For each cyclone, finding the landfall point ---------------------------
 landfall_points <- lapply(unique(bay_of_bengal_cyclones$Serial_Num), function(one_cyclone) {
-  
-  # cat(1)
   
   this_spline_data <- splines_data[[one_cyclone]]
   
-  # base_plot + geom_path(data = this_spline_data %>% mutate(slno = 1:nrow(this_spline_data)), aes(x=x,y=y,color=slno))
-  # base_plot + geom_path(data = bay_of_bengal_cyclones %>% filter(Serial_Num %in% one_cyclone), aes(x=Longitude,y=Latitude))
   
   crossed_into_india <- Map(f = function(x, y) point.in.polygon(x, y, mainland_india$long, mainland_india$lat), 
                             x = this_spline_data$x,
@@ -110,6 +108,7 @@ landfall_points <- lapply(unique(bay_of_bengal_cyclones$Serial_Num), function(on
 
 saveRDS(landfall_points, file = '4-landfall-points-data.rds')
 
+# Plotting the landfall locations ----------------------------------------
 google_map <- get_googlemap(center = c(lon = landfall_points$x %>% range %>% sum %>% divide_by(2),
                                        lat = landfall_points$y %>% range %>% sum %>% divide_by(2)),
                             zoom   = 5,
@@ -118,5 +117,38 @@ google_map <- get_googlemap(center = c(lon = landfall_points$x %>% range %>% sum
                             maptype = "terrain", 
                             color  = "color")
 
-ggmap(google_map, darken = 0.15) + 
-  geom_point(data = landfall_points, aes(x = x, y = y), color = 'red')
+png(filename = 'landfall-locations-small.png', width = 700, height = 700, type = 'cairo-png')
+ggmap(google_map, darken = 0.25) + 
+  geom_point(data = landfall_points, aes(x = x, y = y), color = 'red') +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+dev.off()
+
+png(filename = 'landfall-locations-large.png', width = 1400, height = 1400, type = 'cairo-png')
+ggmap(google_map, darken = 0.25) + 
+  geom_point(data = landfall_points, aes(x = x, y = y), color = 'red') +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+dev.off()
+
+# Plotting the landfall locations with max wind speed --------------------
+cyclones %>% 
+  group_by(Serial_Num) %>% 
+  summarise(max_wind = max(Wind.WMO.), min_pres = min(Pres.WMO.)) %>% 
+  ungroup -> cyclones_wind_pres_data
+
+inner_join(cyclones_wind_pres_data, landfall_points) -> to_plot
+
+png(filename = 'cyclone-intensity-on-map-small.png', width = 700, height = 600, type = 'cairo-png')
+ggmap(google_map, darken = 0.25) + 
+  geom_point(data = to_plot, aes(x = x, y = y, size = max_wind), color = 'red', alpha = 0.25) +
+  theme_bw(base_size = 15) +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) + 
+  scale_size_continuous(limits = c(0, 150), name = 'Max Wind (kt)')
+dev.off()
+
+png(filename = 'cyclone-intensity-on-map-large.png', width = 1000, height = 1000, type = 'cairo-png')
+ggmap(google_map, darken = 0.25) + 
+  geom_point(data = to_plot, aes(x = x, y = y, size = max_wind), color = 'red', alpha = 0.25) +
+  theme_bw(base_size = 15) +
+  theme(axis.title.x = element_blank(), axis.title.y = element_blank()) + 
+  scale_size_continuous(limits = c(0, 150), name = 'Max Wind (kt)')
+dev.off()

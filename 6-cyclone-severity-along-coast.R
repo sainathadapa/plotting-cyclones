@@ -11,8 +11,8 @@ cyclones <- readRDS('1-cyclones-data-parsed.rds')
 
 cyclones %>% 
   group_by(Serial_Num) %>% 
-  summarise(max_wind = max(Wind.WMO.)) %>% 
-  ungroup -> cyclones_max_data
+  summarise(max_wind = max(Wind.WMO.), min_pres = min(Pres.WMO.)) %>% 
+  ungroup -> cyclones_wind_pres_data
 
 east_coast_fit_breakpoints <- data.frame(x = c(77.517578125, 79.5587651654547, 80.4305507380629, 88.0847754421326, 89.0558624267578))
 east_coast_fit_breakpoints$y <- as.numeric(predict(east_coast_fit, east_coast_fit_breakpoints))
@@ -53,18 +53,60 @@ cities_dist <- lapply(seq_len(nrow(cities)), function(i) {
     ))
 }) %>% do.call(what = rbind, args = .)
 
+state_border_points <- data.frame(x = c(80.269165,84.787292,87.481689,89.106293))
+state_border_points$y <- as.numeric(predict(east_coast_fit, state_border_points))
+
+state_dist <- lapply(seq_len(nrow(state_border_points)), function(i) {
+  this_point <- state_border_points[i,]
+  
+  breakpoint_num <- max(which(this_point$x > east_coast_fit_breakpoints$x))
+  
+  this_point %>%
+    mutate(dist = east_coast_fit_breakpoints$cumdist[breakpoint_num] + sqrt(
+      ((x - east_coast_fit_breakpoints$x[breakpoint_num]) ^ 2) +
+        ((y - east_coast_fit_breakpoints$y[breakpoint_num]) ^ 2)
+    ))
+}) %>% do.call(what = rbind, args = .)
+
+
 data_to_plot <- landfall_points_dist %>% 
   select(Serial_Num, dist) %>% 
-  inner_join(cyclones_max_data)
+  inner_join(cyclones_wind_pres_data)
 
 ggthemr::ggthemr('flat')
 
+mid_points <- data.frame( x = (state_dist$dist + c(0, state_dist$dist[-length(state_dist$dist)]))/2, y = c('Tamil Nadu', 'Andhra Pradesh', 'Orissa', 'West Bengal'))
+
+
+png(filename = 'cyclone-intensity-small.png', width = 900, height = 450, type = 'cairo-png',bg = "transparent")
 ggplot(data_to_plot) +
   geom_point(aes(dist, max_wind)) +
-  geom_segment(aes(x = dist, xend = dist, y = 0, yend = max_wind)) +
+  geom_segment(aes(x = dist, xend = dist, y = 0, yend = max_wind), alpha = 0.5) +
   coord_cartesian(xlim = c(0, max(east_coast_fit_breakpoints$cumdist)), ylim = c(0, 150), expand = FALSE) + 
+  geom_vline(data = state_dist, aes(xintercept = dist), color = 'red', linetype = 'dotted') +
+  geom_text(data = mid_points, aes(x=x,y=145, label = y), fontface = "bold") +
   geom_point(data = cities_dist, aes(x = dist, y = 0), color = 'red') +
   scale_x_continuous(breaks = cities_dist$dist, labels = cities_dist$name) +
   scale_y_continuous(name = 'Max Wind (kt)') + 
-  theme(axis.title.x = element_blank())
+  # theme_light(base_size = 15) +
+  theme(axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.major.y = element_blank())
+dev.off()
   
+png(filename = 'cyclone-intensity-large.png', width = 1500, height = 750, type = 'cairo-png',bg = "transparent")
+ggplot(data_to_plot) +
+  geom_point(aes(dist, max_wind)) +
+  geom_segment(aes(x = dist, xend = dist, y = 0, yend = max_wind), alpha = 0.5) +
+  coord_cartesian(xlim = c(0, max(east_coast_fit_breakpoints$cumdist)), ylim = c(0, 150), expand = FALSE) + 
+  geom_vline(data = state_dist, aes(xintercept = dist), color = 'red', linetype = 'dotted') +
+  geom_text(data = mid_points, aes(x=x,y=145, label = y), fontface = "bold") +
+  geom_point(data = cities_dist, aes(x = dist, y = 0), color = 'red') +
+  scale_x_continuous(breaks = cities_dist$dist, labels = cities_dist$name) +
+  scale_y_continuous(name = 'Max Wind (kt)') + 
+  # theme_light(base_size = 15) +
+  theme(axis.title.x = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.major.y = element_blank())
+dev.off()
+
